@@ -1,15 +1,17 @@
 package httpz
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type ErrHandler func(err error, w http.ResponseWriter)
 
 func DefaultErrHandler(err error, w http.ResponseWriter) {
-	if r, ok := w.(*ResponseWriter); ok && r.isCommited {
+	rw := Unwrap(w)
+
+	if rw.isCommited || err == nil {
 		return
 	}
-
-	rw := Unwrap(w)
 
 	switch he := err.(type) {
 	case *HTTPError:

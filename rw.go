@@ -24,6 +24,10 @@ func (rw *ResponseWriter) StatusCode() int {
 	return rw.statusCode
 }
 
+func (rw *ResponseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
+}
+
 type Map map[string]any
 
 // 下面是一些helper方法，用于响应数据。

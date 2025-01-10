@@ -1,8 +1,12 @@
+//go:build go1.22
+
 package httpz
 
 import (
 	"fmt"
 	"net/http"
+	"strings"
+	"sync"
 )
 
 type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
@@ -14,21 +18,16 @@ type ServeMux struct {
 	ErrHandler ErrHandler
 	mws        []MiddlewareFunc
 	groups     map[string]*ServeMux
-}
-
-func convertResponseWriter(next HandlerFunc) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		w = &ResponseWriter{ResponseWriter: w}
-		return next(w, r)
-	}
+	isMaster   bool
+	once       sync.Once
 }
 
 func NewServeMux() *ServeMux {
 	return &ServeMux{
 		ServeMux:   http.ServeMux{},
 		groups:     make(map[string]*ServeMux),
-		mws:        []MiddlewareFunc{convertResponseWriter},
 		ErrHandler: DefaultErrHandler,
+		isMaster:   true,
 	}
 }
 
@@ -39,10 +38,22 @@ func (sm *ServeMux) HandleFunc(pattern string, h HandlerFunc) {
 	})
 }
 
-func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (sm *ServeMux) addToMux() {
 	for prefix, mux := range sm.groups {
-		sm.Handle(prefix, http.StripPrefix(prefix, mux))
+		mux.addToMux()
+		pre := strings.TrimSuffix(prefix, "/")
+		sm.Handle(prefix, http.StripPrefix(pre, mux))
 	}
+}
+
+func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if sm.isMaster {
+		sm.once.Do(func() {
+			sm.addToMux()
+		})
+	}
+
+	w = &ResponseWriter{ResponseWriter: w}
 
 	h := http.Handler(&sm.ServeMux)
 
@@ -58,6 +69,11 @@ func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (sm *ServeMux) Group(prefix string) *ServeMux {
 	mux := NewServeMux()
+	mux.isMaster = false
+	if _, existed := sm.groups[prefix]; existed {
+		panic(fmt.Sprintf("prefix %s already existed", prefix))
+	}
+
 	sm.groups[prefix] = mux
 	return mux
 }
