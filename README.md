@@ -1,5 +1,7 @@
 > Note that httpz is still unstable.
 
+**[简体中文](https://github.com/aeilang/httpz/blob/main/README_CN.md)**
+
 httpz is a lightweight library built on top of net/http version 1.22. It takes inspiration from Echo's centralized error handling and chi's adherence to the standard library. The problem it aims to solve is that while net/http version 1.22 enhances routing, its functionality is not as user-friendly as other frameworks like Echo and chi.
 
 It functions more like a set of helper functions for net/http rather than a full-fledged web framework. Thanks to net/http handling most of the heavy lifting, httpz has minimal code.
