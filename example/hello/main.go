@@ -13,10 +13,6 @@ import (
 func main() {
 	// Create a new mux
 	mux := httpz.NewServeMux()
-	
-	mux.ErrHandler = func(err error, w http.ResponseWriter) {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 
 	// logger use slog package
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))

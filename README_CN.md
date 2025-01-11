@@ -21,6 +21,10 @@ httpz更像是 net/http 1.22 的一组helper函数，而非一个完整的 Web �
 
 要安装 httpz，需要 Go 1.22+
 
+```sh
+go get github.com/aeilang/httpz
+```
+
 #### Hello World
 
 ```go
