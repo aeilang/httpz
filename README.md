@@ -108,7 +108,11 @@ You can customize the error handling function:
 mux := httpz.NewServeMux()
 
 mux.ErrHandler = func(err error, w http.ResponseWriter) {
-  // ...
+	rw := http.Unwrap(w)
+	if rw.StatusCode() != 0 || err == nil {
+		return
+	}
+  // for example:
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 ```

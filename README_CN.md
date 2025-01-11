@@ -108,7 +108,11 @@ v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
 mux := httpz.NewServeMux()
 
 mux.ErrHandler = func(err error, w http.ResponseWriter) {
-  // ...
+	rw := http.Unwrap(w)
+	if rw.StatusCode() != 0 || err == nil {
+		return
+	}
+  // for example:
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 ```
