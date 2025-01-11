@@ -2,7 +2,6 @@ package mws
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"time"
@@ -37,19 +36,5 @@ func Logger(logger *slog.Logger) httpz.MiddlewareFunc {
 
 			return err
 		}
-	}
-}
-
-func API(next httpz.HandlerFunc) httpz.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		log.Println("apiapi")
-		return next(w, r)
-	}
-}
-
-func V2(next httpz.HandlerFunc) httpz.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		log.Println("v2v2")
-		return next(w, r)
 	}
 }

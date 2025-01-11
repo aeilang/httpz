@@ -4,8 +4,10 @@ import (
 	"net/http"
 )
 
+// centralized error handling function type.
 type ErrHandler func(err error, w http.ResponseWriter)
 
+// default centrailzed error handling function
 func DefaultErrHandler(err error, w http.ResponseWriter) {
 	rw := Unwrap(w)
 
@@ -21,6 +23,7 @@ func DefaultErrHandler(err error, w http.ResponseWriter) {
 	}
 }
 
+// helper function to get underline *ResponseWriter
 func Unwrap(w http.ResponseWriter) *ResponseWriter {
 	rw, ok := w.(*ResponseWriter)
 	if !ok {
@@ -30,7 +33,7 @@ func Unwrap(w http.ResponseWriter) *ResponseWriter {
 	return rw
 }
 
-// 自定义Error类型 参考了echo
+// The custom Error type is inspired by Echo.
 type HTTPError struct {
 	StatusCode int
 	Msg        string

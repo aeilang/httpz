@@ -9,10 +9,14 @@ import (
 	"sync"
 )
 
+// HandlerFunc defines the function signature for a handler.
+// It returns an error, which is used for centralized error handling.
 type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
 
+// Middleware function signatrue
 type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
+// ServeMux embeds http.ServeMux
 type ServeMux struct {
 	http.ServeMux
 	ErrHandler ErrHandler
@@ -22,6 +26,7 @@ type ServeMux struct {
 	once       sync.Once
 }
 
+// NewServeMux return a new ServeMux
 func NewServeMux() *ServeMux {
 	return &ServeMux{
 		ServeMux:   http.ServeMux{},
@@ -31,6 +36,7 @@ func NewServeMux() *ServeMux {
 	}
 }
 
+// To rewrite the HandleFunc function signature
 func (sm *ServeMux) HandleFunc(pattern string, h HandlerFunc) {
 	sm.ServeMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		err := h(w, r)
@@ -38,6 +44,7 @@ func (sm *ServeMux) HandleFunc(pattern string, h HandlerFunc) {
 	})
 }
 
+// Recursively add all child muxes to the parent mux.
 func (sm *ServeMux) addToMux() {
 	for prefix, mux := range sm.groups {
 		mux.addToMux()
@@ -46,7 +53,9 @@ func (sm *ServeMux) addToMux() {
 	}
 }
 
+// To rewrite the ServeHTTP function
 func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Only the main mux needs to execute this.
 	if sm.isMaster {
 		sm.once.Do(func() {
 			sm.addToMux()
@@ -67,9 +76,13 @@ func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sm.ErrHandler(err, w)
 }
 
+// Group creates a group mux based on a prefix.
 func (sm *ServeMux) Group(prefix string) *ServeMux {
-	mux := NewServeMux()
-	mux.isMaster = false
+	mux := &ServeMux{
+		ServeMux:   http.ServeMux{},
+		ErrHandler: sm.ErrHandler,
+		groups:     map[string]*ServeMux{},
+	}
 	if _, existed := sm.groups[prefix]; existed {
 		panic(fmt.Sprintf("prefix %s already existed", prefix))
 	}
@@ -78,6 +91,7 @@ func (sm *ServeMux) Group(prefix string) *ServeMux {
 	return mux
 }
 
+// Here is the helper function:
 func (sm *ServeMux) Get(path string, h HandlerFunc, m ...MiddlewareFunc) {
 	h = use(h, m...)
 	sm.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, path), h)
@@ -123,6 +137,7 @@ func (sm *ServeMux) Trace(path string, h HandlerFunc, m ...MiddlewareFunc) {
 	sm.HandleFunc(fmt.Sprintf("%s %s", http.MethodTrace, path), h)
 }
 
+// use adds middleware for individual routes.
 func use(h HandlerFunc, m ...MiddlewareFunc) HandlerFunc {
 	for i := len(m) - 1; i >= 0; i-- {
 		h = m[i](h)
@@ -131,6 +146,7 @@ func use(h HandlerFunc, m ...MiddlewareFunc) HandlerFunc {
 	return h
 }
 
+// Use adds middleware for the mux.
 func (sm *ServeMux) Use(m ...MiddlewareFunc) {
 	sm.mws = append(sm.mws, m...)
 }
