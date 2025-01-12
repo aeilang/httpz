@@ -1,51 +1,44 @@
 package httpz
 
 import (
+	"log/slog"
 	"net/http"
 )
 
 // centralized error handling function type.
-type ErrHandler func(err error, w http.ResponseWriter)
+type ErrHandlerFunc func(err error, w http.ResponseWriter)
 
-// default centrailzed error handling function
-func DefaultErrHandler(err error, w http.ResponseWriter) {
-	rw := Unwrap(w)
-
-	if rw.isCommited || err == nil {
-		return
-	}
-
-	switch he := err.(type) {
-	case *HTTPError:
+// default centrailzed error handling function.
+// only the *HTTPError will triger error response.
+func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
+	if he, ok := err.(*HTTPError); ok {
+		rw := NewHelperRW(w)
 		rw.JSON(he.StatusCode, Map{"msg": he.Msg})
-	default:
-		rw.JSON(http.StatusInternalServerError, Map{"msg": he.Error()})
+	} else {
+		slog.Error(err.Error())
 	}
-}
-
-// helper function to get underline *ResponseWriter
-func Unwrap(w http.ResponseWriter) *ResponseWriter {
-	rw, ok := w.(*ResponseWriter)
-	if !ok {
-		panic("Unwrap must be used in httpz")
-	}
-
-	return rw
 }
 
 // The custom Error type is inspired by Echo.
 type HTTPError struct {
 	StatusCode int
 	Msg        string
+	errs       []error
 }
 
-func NewHTTPError(statusCode int, msg string) *HTTPError {
+func NewHTTPError(statusCode int, msg string, errs ...error) *HTTPError {
 	return &HTTPError{
 		StatusCode: statusCode,
 		Msg:        msg,
+		errs:       errs,
 	}
 }
 
 func (e *HTTPError) Error() string {
-	return e.Msg
+	msg := e.Msg
+	for _, err := range e.errs {
+		msg += err.Error()
+	}
+
+	return msg
 }

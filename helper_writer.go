@@ -11,27 +11,18 @@ import (
 
 // A built-in type, used only to record the StatusCode
 // and quickly send responses.
-type ResponseWriter struct {
+type HelperResponseWriter struct {
 	http.ResponseWriter
-	http.Pusher
-	isCommited bool
-	statusCode int
 }
 
-// rewrite the WriteHeader method to record statusCode
-func (rw *ResponseWriter) WriteHeader(statusCode int) {
-	rw.isCommited = true
-	rw.statusCode = statusCode
-
-	rw.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (rw *ResponseWriter) StatusCode() int {
-	return rw.statusCode
+func NewHelperRW(w http.ResponseWriter) *HelperResponseWriter {
+	return &HelperResponseWriter{
+		ResponseWriter: w,
+	}
 }
 
 // implement http.Flusher
-func (rw *ResponseWriter) Flush() {
+func (rw *HelperResponseWriter) Flush() {
 	w := rw.ResponseWriter
 
 	for {
@@ -48,7 +39,7 @@ func (rw *ResponseWriter) Flush() {
 }
 
 // implement http.Hijacker
-func (rw *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (rw *HelperResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	w := rw.ResponseWriter
 	for {
 		switch t := w.(type) {
@@ -63,7 +54,7 @@ func (rw *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 // implement http.Pusher
-func (rw *ResponseWriter) Push(target string, opts *http.PushOptions) error {
+func (rw *HelperResponseWriter) Push(target string, opts *http.PushOptions) error {
 	w := rw.ResponseWriter
 
 	for {
@@ -83,21 +74,21 @@ type rwUnwrapper interface {
 }
 
 // get the wrapped ResponseWriter
-func (rw *ResponseWriter) Unwrap() http.ResponseWriter {
+func (rw *HelperResponseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
 
 type Map map[string]any
 
 // send json
-func (rw *ResponseWriter) JSON(statusCode int, data any) error {
+func (rw *HelperResponseWriter) JSON(statusCode int, data any) error {
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(statusCode)
 	return json.NewEncoder(rw).Encode(data)
 }
 
 // send string
-func (rw *ResponseWriter) String(statusCode int, s string) error {
+func (rw *HelperResponseWriter) String(statusCode int, s string) error {
 	rw.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 	rw.WriteHeader(statusCode)
 	_, err := rw.Write([]byte(s))
@@ -105,7 +96,7 @@ func (rw *ResponseWriter) String(statusCode int, s string) error {
 }
 
 // send html
-func (rw *ResponseWriter) HTML(statusCode int, html string) error {
+func (rw *HelperResponseWriter) HTML(statusCode int, html string) error {
 	rw.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	rw.WriteHeader(statusCode)
 	_, err := rw.Write([]byte(html))
@@ -113,7 +104,7 @@ func (rw *ResponseWriter) HTML(statusCode int, html string) error {
 }
 
 // send xml
-func (rw *ResponseWriter) XML(statusCode int, data any, indent string) error {
+func (rw *HelperResponseWriter) XML(statusCode int, data any, indent string) error {
 	rw.Header().Set("Content-Type", "application/xml; charset=UTF-8")
 	rw.WriteHeader(statusCode)
 	enc := xml.NewEncoder(rw)

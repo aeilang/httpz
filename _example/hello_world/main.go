@@ -1,30 +1,25 @@
 package main
 
 import (
-	"log"
-	"log/slog"
+	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/aeilang/httpz"
-	"github.com/aeilang/httpz/mws"
+	"github.com/aeilang/httpz/middleware"
 )
 
 func main() {
 	// Create a new mux
 	mux := httpz.NewServeMux()
 
-	// logger use slog package
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	// register a logger middleware
-	mux.Use(mws.Logger(logger))
+	// add logger middleware, it 's copy from chi/middleware
+	mux.Use(middleware.Logger)
 
 	// register a GET /hello route
 	// GET /hello
 	mux.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
-		// Unwrap w to get its underlying implementation.
-		// rw includes helper methods for sending responses.
-		rw := httpz.Unwrap(w)
+		// rw is a helper responsewriter to send response
+		rw := httpz.NewHelperRW(w)
 		return rw.String(http.StatusOK, "hello httpz")
 	})
 
@@ -32,13 +27,14 @@ func main() {
 	// This is required by the standard library syntax,
 	// which handles all requests starting with /api.
 	api := mux.Group("/api/")
+
 	// use API middleware for this api group. just for testing the ability。
 	api.Use(API)
 
 	// register GET /well route for api group.
 	// GET /api/well
 	api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {
-		rw := httpz.Unwrap(w)
+		rw := httpz.NewHelperRW(w)
 		return rw.JSON(http.StatusOK, httpz.Map{
 			"data": "well well httpz",
 		})
@@ -69,18 +65,20 @@ func main() {
 	http.ListenAndServe(":8080", mux)
 }
 
-// middleware for example
-func API(next httpz.HandlerFunc) httpz.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		log.Println("apiapi")
-		return next(w, r)
+func API(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("before api")
+		next.ServeHTTP(w, r)
 	}
+
+	return http.HandlerFunc(fn)
 }
 
-// middleware for example
-func V2(next httpz.HandlerFunc) httpz.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		log.Println("v2v2")
-		return next(w, r)
+func V2(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		fmt.Println("after api")
 	}
+
+	return http.HandlerFunc(fn)
 }
