@@ -41,10 +41,10 @@ func TestXForwardForIP(t *testing.T) {
 		"100.100.100.100,200.200.200.200",
 	}
 
-	r := httpz.NewServeMux()
-	r.Use(RealIP)
-
 	for _, v := range xForwardedForIPs {
+		r := httpz.NewServeMux()
+		r.Use(RealIP)
+
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Add("X-Forwarded-For", v)
 
