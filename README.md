@@ -34,24 +34,21 @@ import (
 	"os"
 
 	"github.com/aeilang/httpz"
-	"github.com/aeilang/httpz/mws"
+	"github.com/aeilang/httpz/middleware"
 )
 
 func main() {
 	// Create a new mux
 	mux := httpz.NewServeMux()
 
-	// logger use slog package
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	// register a logger middleware
-	mux.Use(mws.Logger(logger))
+	// add logger middleware, it 's copy from chi/middleware
+	mux.Use(middleware.Logger)
 
 	// register a GET /hello route
 	// GET /hello
 	mux.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
-		// Unwrap w to get its underlying implementation.
-		// rw includes helper methods for sending responses.
-		rw := httpz.Unwrap(w)
+		// rw is a helper responsewriter to send response
+		rw := httpz.NewHelperRW(w)
 		return rw.String(http.StatusOK, "hello httpz")
 	})
   
@@ -60,19 +57,20 @@ func main() {
 }
 ```
 
-> you don't use slog, you can easily create a custom logging middleware.
+> the middleware package if copied from chi/middleware. 
 
 The complete example can be found in the [example](https://github.com/aeilang/httpz/blob/main//example/hello/main.go) directory
 
 #### grouping:
 
 ```go
+// group return a new *ServeMux base on path "/api/"
 api := mux.Group("/api/")
 
 // register GET /well route for api group.
 // GET /api/well
-api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {
-	rw := httpz.Unwrap(w)
+api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {	
+	rw := httpz.NewHelperRW(w)
 	return rw.JSON(http.StatusOK, httpz.Map{
 		"data": "well well httpz",
 	})
@@ -92,11 +90,13 @@ v2.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
 	return httpz.NewHTTPError(http.StatusBadRequest, "bad reqeust")
 })
 
-// testing path parameters and centrialzed error handling.
 // GET /api/v2/well/randomID
 v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
-	return httpz.NewHTTPError(http.StatusBadRequest, id)
+	
+	// the default error handler just trigered by *HTTPError
+	// another error will just be logged,not sending response.
+	return errors.New("nomal error")
 })
 ```
 
@@ -108,10 +108,6 @@ You can customize the error handling function:
 mux := httpz.NewServeMux()
 
 mux.ErrHandler = func(err error, w http.ResponseWriter) {
-	rw := http.Unwrap(w)
-	if rw.StatusCode() != 0 || err == nil {
-		return
-	}
   // for example:
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
@@ -120,18 +116,14 @@ mux.ErrHandler = func(err error, w http.ResponseWriter) {
 The default error handling function is as follows:
 
 ```go
-func DefaultErrHandler(err error, w http.ResponseWriter) {
-	rw := Unwrap(w)
-
-	if rw.isCommited || err == nil {
-		return
-	}
-
-	switch he := err.(type) {
-	case *HTTPError:
+// default centrailzed error handling function.
+// only the *HTTPError will triger error response.
+func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
+	if he, ok := err.(*HTTPError); ok {
+		rw := NewHelperRW(w)
 		rw.JSON(he.StatusCode, Map{"msg": he.Msg})
-	default:
-		rw.JSON(http.StatusInternalServerError, Map{"msg": he.Error()})
+	} else {
+		slog.Error(err.Error())
 	}
 }
 ```
