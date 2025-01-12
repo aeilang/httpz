@@ -1,4 +1,4 @@
-> Note that httpz is still unstable.
+> httpz v1.0.0 is release, its API is stable.
 
 **[简体中文](https://github.com/aeilang/httpz/blob/main/README_CN.md)**
 
