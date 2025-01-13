@@ -82,14 +82,14 @@ type Map map[string]any
 
 // send json
 func (rw *HelperResponseWriter) JSON(statusCode int, data any) error {
-	rw.Header().Set("Content-Type", "application/json")
+	rw.Header().Set(HeaderContentType, MIMEApplicationJSON)
 	rw.WriteHeader(statusCode)
 	return json.NewEncoder(rw).Encode(data)
 }
 
 // send string
 func (rw *HelperResponseWriter) String(statusCode int, s string) error {
-	rw.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	rw.Header().Set(HeaderContentType, MIMETextPlainCharsetUTF8)
 	rw.WriteHeader(statusCode)
 	_, err := rw.Write([]byte(s))
 	return err
@@ -97,7 +97,7 @@ func (rw *HelperResponseWriter) String(statusCode int, s string) error {
 
 // send html
 func (rw *HelperResponseWriter) HTML(statusCode int, html string) error {
-	rw.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	rw.Header().Set(HeaderContentType, MIMETextHTMLCharsetUTF8)
 	rw.WriteHeader(statusCode)
 	_, err := rw.Write([]byte(html))
 	return err
@@ -105,7 +105,7 @@ func (rw *HelperResponseWriter) HTML(statusCode int, html string) error {
 
 // send xml
 func (rw *HelperResponseWriter) XML(statusCode int, data any, indent string) error {
-	rw.Header().Set("Content-Type", "application/xml; charset=UTF-8")
+	rw.Header().Set(HeaderContentType, MIMEApplicationXMLCharsetUTF8)
 	rw.WriteHeader(statusCode)
 	enc := xml.NewEncoder(rw)
 	if indent != "" {

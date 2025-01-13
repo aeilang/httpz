@@ -1,3 +1,5 @@
+![Logo](./_img/httpz.png "网站Logo")
+
 > httpz v1.0.0 is release, its API is stable.
 
 **[简体中文](https://github.com/aeilang/httpz/blob/main/README_CN.md)**
@@ -15,9 +17,9 @@ It has the following features:
 
 3. Complete compatibility with the standard library.
 
-### Quick Start
+# Quick Start
 
-#### Installation
+## 1.Installation
 
 To install httpz, Go 1.22 or higher is required.
 
@@ -25,13 +27,11 @@ To install httpz, Go 1.22 or higher is required.
 go get github.com/aeilang/httpz
 ```
 
-#### Hello World
+## 2.Hello World
 
 ```go
 import (
-	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/aeilang/httpz"
 	"github.com/aeilang/httpz/middleware"
@@ -50,6 +50,12 @@ func main() {
 		// rw is a helper responsewriter to send response
 		rw := httpz.NewHelperRW(w)
 		return rw.String(http.StatusOK, "hello httpz")
+		
+		// or you can write it by yourself.
+		// hw.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		// hw.WriteHeader(http.StatusOK)
+		// hw.Write([]byte("hello httpz"))
+		// return nil
 	})
   
   // just like net/http's ServerMux
@@ -57,11 +63,11 @@ func main() {
 }
 ```
 
-> the middleware package if copied from chi/middleware. 
+> the middleware package is copied from chi/middleware. 
 
 The complete example can be found in the [example](https://github.com/aeilang/httpz/blob/main//example/hello/main.go) directory
 
-#### grouping:
+## 3.grouping:
 
 ```go
 // group return a new *ServeMux base on path "/api/"
@@ -77,7 +83,7 @@ api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {
 })
 ```
 
-#### Centralized error handling
+## 4.Centralized error handling
 
 ```go
 // The parent mux of v2 is api,
@@ -90,13 +96,20 @@ v2.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
 	return httpz.NewHTTPError(http.StatusBadRequest, "bad reqeust")
 })
 
+// testing path parameters and centrialzed error handling.
 // GET /api/v2/well/randomID
 v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
-	
-	// the default error handler just trigered by *HTTPError
-	// another error will just be logged,not sending response.
-	return errors.New("nomal error")
+
+	return httpz.NewHTTPError(http.StatusBadRequest, id)
+})
+
+// Get /api/v2/well/httperr
+v2.Get("/httperr", func(w http.ResponseWriter, r *http.Request) error {
+
+	// only *HTTPError will trigger the global error handling.
+	// normal error just will just log the msg.
+	return errors.New("some error")
 })
 ```
 
@@ -117,7 +130,7 @@ The default error handling function is as follows:
 
 ```go
 // default centrailzed error handling function.
-// only the *HTTPError will triger error response.
+// only the *HTTPError will triger sending error response.
 func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 	if he, ok := err.(*HTTPError); ok {
 		rw := NewHelperRW(w)
@@ -128,7 +141,7 @@ func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 }
 ```
 
-#### Feel free to contribute your code.
+## 5.Feel free to contribute your code.
 
 - test
 

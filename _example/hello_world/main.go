@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -19,8 +20,14 @@ func main() {
 	// GET /hello
 	mux.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
 		// rw is a helper responsewriter to send response
-		rw := httpz.NewHelperRW(w)
-		return rw.String(http.StatusOK, "hello httpz")
+		hw := httpz.NewHelperRW(w)
+		return hw.String(http.StatusOK, "hello httpz")
+
+		// or you can write it by yourself
+		// hw.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		//		hw.WriteHeader(http.StatusOK)
+		//		hw.Write([]byte("hello httpz"))
+		//		return nil
 	})
 
 	// Group routes based on /api/, making sure to include the trailing slash /.
@@ -34,8 +41,8 @@ func main() {
 	// register GET /well route for api group.
 	// GET /api/well
 	api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {
-		rw := httpz.NewHelperRW(w)
-		return rw.JSON(http.StatusOK, httpz.Map{
+		hw := httpz.NewHelperRW(w)
+		return hw.JSON(http.StatusOK, httpz.Map{
 			"data": "well well httpz",
 		})
 	})
@@ -61,10 +68,19 @@ func main() {
 		return httpz.NewHTTPError(http.StatusBadRequest, id)
 	})
 
+	// Get /api/v2/well/httperr
+	v2.Get("/httperr", func(w http.ResponseWriter, r *http.Request) error {
+
+		// only *HTTPError will trigger the global error handling.
+		// normal error just will just log the msg.
+		return errors.New("some error")
+	})
+
 	// just like net/http's ServerMux
 	http.ListenAndServe(":8080", mux)
 }
 
+// API middleware for test
 func API(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("before api")
@@ -74,10 +90,11 @@ func API(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+// V2 middleware for test
 func V2(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
-		fmt.Println("after api")
+		fmt.Println("after v2")
 	}
 
 	return http.HandlerFunc(fn)

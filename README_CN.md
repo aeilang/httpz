@@ -1,7 +1,8 @@
+![Logo](./_img/httpz.png "网站Logo")
 
 > httpz v1.0.0 版本已经发布，它的API已经稳定
 
-背景： net/http 1.22 虽然增强了路由功能，但使用体验却不如 Echo 和 chi 等框架。
+背景： net/http 1.22 虽然增强了路由功能，但使用体验不如 Echo 和 chi 等框架。
 
 httpz 是一个基于 net/http 1.22 版本构建的轻量级库，借鉴了 Echo 的集中式错误处理以及 chi 的小和轻量。
 
@@ -15,9 +16,9 @@ httpz更像是 net/http 1.22 的一组helper函数，而非一个完整的 Web �
 
 - 完全兼容标准库。
 
-### 快速开始
+# 快速开始
 
-#### 安装
+## 1.安装
 
 要安装 httpz，需要 Go 1.22+
 
@@ -25,13 +26,11 @@ httpz更像是 net/http 1.22 的一组helper函数，而非一个完整的 Web �
 go get github.com/aeilang/httpz
 ```
 
-#### Hello World
+## 2.Hello World
 
 ```go
 import (
-	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/aeilang/httpz"
 	"github.com/aeilang/httpz/middleware"
@@ -50,6 +49,12 @@ func main() {
 		// rw is a helper responsewriter to send response
 		rw := httpz.NewHelperRW(w)
 		return rw.String(http.StatusOK, "hello httpz")
+		
+		// or you can write it by yourself.
+		// hw.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		// hw.WriteHeader(http.StatusOK)
+		// hw.Write([]byte("hello httpz"))
+		// return nil
 	})
   
   // just like net/http's ServerMux
@@ -61,7 +66,7 @@ func main() {
 
 完整的hello world例子在 [example](https://github.com/aeilang/httpz/blob/main//example/hello/main.go) 目录
 
-#### 分组:
+## 3.分组:
 
 ```go
 // group return a new *ServeMux base on path "/api/"
@@ -77,7 +82,7 @@ api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {
 })
 ```
 
-#### 集中式错误处理
+## 4.集中式错误处理
 
 ```go
 // The parent mux of v2 is api,
@@ -90,13 +95,20 @@ v2.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
 	return httpz.NewHTTPError(http.StatusBadRequest, "bad reqeust")
 })
 
+// testing path parameters and centrialzed error handling.
 // GET /api/v2/well/randomID
 v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
-	
-	// the default error handler just trigered by *HTTPError
-	// another error will just be logged,not sending response.
-	return errors.New("nomal error")
+
+	return httpz.NewHTTPError(http.StatusBadRequest, id)
+})
+
+// Get /api/v2/well/httperr
+v2.Get("/httperr", func(w http.ResponseWriter, r *http.Request) error {
+
+	// only *HTTPError will trigger the global error handling.
+	// normal error just will just log the msg.
+	return errors.New("some error")
 })
 ```
 
@@ -128,7 +140,7 @@ func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 }
 ```
 
-#### 欢迎贡献你的代码
+## 5.欢迎贡献你的代码
 
 - test
 

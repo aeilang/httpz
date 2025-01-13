@@ -1,3 +1,7 @@
+// Copyright (c) 2015-present Peter Kieltyka (https://github.com/pkieltyka), Google Inc.
+// Declaration: The middleware package is copied from chi/v5/middleware. Source:
+// https://github.com/go-chi/chi/tree/master/middleware
+
 package middleware
 
 import (
