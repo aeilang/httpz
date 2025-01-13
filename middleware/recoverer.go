@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -33,10 +34,25 @@ func Recoverer(next http.Handler) http.Handler {
 					panic(rvr)
 				}
 
+				// extract requestID, client's IP address
+				requestID := GetReqID(r.Context())
+				remoteAddr := r.RemoteAddr
+				method := r.Method
+				url := r.URL.String()
+
 				logEntry := GetLogEntry(r)
 				if logEntry != nil {
 					logEntry.Panic(rvr, debug.Stack())
 				} else {
+					slog.With(
+						"panic", fmt.Sprintf("%v", rvr),
+						"stack", string(debug.Stack()),
+						"requestID", requestID,
+						"remoteAddr", remoteAddr,
+						"method", method,
+						"url", url,
+						"headers", r.Header,
+					).Error("Recovered from panic")
 					PrintPrettyStack(rvr)
 				}
 
