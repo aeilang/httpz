@@ -104,7 +104,7 @@ v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
 	return httpz.NewHTTPError(http.StatusBadRequest, id)
 })
 
-// Get /api/v2/well/httperr
+// Get /api/v2/httperr
 v2.Get("/httperr", func(w http.ResponseWriter, r *http.Request) error {
 
 	// only *HTTPError will trigger the global error handling.
@@ -141,7 +141,28 @@ func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 }
 ```
 
-## 5.Feel free to contribute your code.
+## 5. Binding
+
+You can also bind path parameters, query parameters, form parameters, and req.Body just like in Echo.
+
+```go
+	type User struct {
+		Name string `json:"name"`
+	}
+
+	// POST /api/v2/user
+	v2.Post("/user", func(w http.ResponseWriter, r *http.Request) error {
+		var u User
+		if err := httpz.Bind(r, &u); err != nil {
+			return err
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		return nil
+	})
+```
+
+# Feel free to contribute your code.
 
 - test
 

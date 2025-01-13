@@ -103,7 +103,7 @@ v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
 	return httpz.NewHTTPError(http.StatusBadRequest, id)
 })
 
-// Get /api/v2/well/httperr
+// Get /api/v2/httperr
 v2.Get("/httperr", func(w http.ResponseWriter, r *http.Request) error {
 
 	// only *HTTPError will trigger the global error handling.
@@ -140,7 +140,28 @@ func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 }
 ```
 
-## 5.欢迎贡献你的代码
+## 5.绑定参数
+
+你也可以像使用 Echo 一样绑定路径参数、查询参数、表单参数和 req.Body。
+
+```go
+	type User struct {
+		Name string `json:"name"`
+	}
+
+	// POST /api/v2/user
+	v2.Post("/user", func(w http.ResponseWriter, r *http.Request) error {
+		var u User
+		if err := httpz.Bind(r, &u); err != nil {
+			return err
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		return nil
+	})
+```
+
+# 欢迎贡献你的代码
 
 - test
 
