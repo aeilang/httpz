@@ -140,7 +140,7 @@ func (sm *ServeMux) Trace(path string, h HandlerFunc, m ...RouteMiddlewareFunc) 
 // use adds middleware for individual routes.
 func use(h HandlerFunc, m ...RouteMiddlewareFunc) HandlerFunc {
 	for i := len(m) - 1; i >= 0; i-- {
-		m[i](h)
+		h = m[i](h)
 	}
 
 	return h
