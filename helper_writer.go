@@ -9,19 +9,20 @@ import (
 	"net/http"
 )
 
-// A built-in type, used only to record the StatusCode
+// HelperResponseWriter is a built-in type used to record the StatusCode
 // and quickly send responses.
 type HelperResponseWriter struct {
 	http.ResponseWriter
 }
 
+// NewHelperRW creates a new instance of HelperResponseWriter.
 func NewHelperRW(w http.ResponseWriter) *HelperResponseWriter {
 	return &HelperResponseWriter{
 		ResponseWriter: w,
 	}
 }
 
-// implement http.Flusher
+// Flush implements the http.Flusher interface.
 func (rw *HelperResponseWriter) Flush() {
 	w := rw.ResponseWriter
 
@@ -38,7 +39,7 @@ func (rw *HelperResponseWriter) Flush() {
 	}
 }
 
-// implement http.Hijacker
+// Hijack implements the http.Hijacker interface.
 func (rw *HelperResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	w := rw.ResponseWriter
 	for {
@@ -53,7 +54,7 @@ func (rw *HelperResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	}
 }
 
-// implement http.Pusher
+// Push implements the http.Pusher interface.
 func (rw *HelperResponseWriter) Push(target string, opts *http.PushOptions) error {
 	w := rw.ResponseWriter
 
@@ -73,21 +74,22 @@ type rwUnwrapper interface {
 	Unwrap() http.ResponseWriter
 }
 
-// get the wrapped ResponseWriter
+// Unwrap returns the wrapped ResponseWriter.
 func (rw *HelperResponseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
 
+// Map is a type alias for a map with string keys and any type values.
 type Map map[string]any
 
-// send json
+// JSON sends a JSON response with the specified status code and data.
 func (rw *HelperResponseWriter) JSON(statusCode int, data any) error {
 	rw.Header().Set(HeaderContentType, MIMEApplicationJSON)
 	rw.WriteHeader(statusCode)
 	return json.NewEncoder(rw).Encode(data)
 }
 
-// send string
+// String sends a plain text response with the specified status code and string.
 func (rw *HelperResponseWriter) String(statusCode int, s string) error {
 	rw.Header().Set(HeaderContentType, MIMETextPlainCharsetUTF8)
 	rw.WriteHeader(statusCode)
@@ -95,7 +97,7 @@ func (rw *HelperResponseWriter) String(statusCode int, s string) error {
 	return err
 }
 
-// send html
+// HTML sends an HTML response with the specified status code and HTML content.
 func (rw *HelperResponseWriter) HTML(statusCode int, html string) error {
 	rw.Header().Set(HeaderContentType, MIMETextHTMLCharsetUTF8)
 	rw.WriteHeader(statusCode)
@@ -103,7 +105,7 @@ func (rw *HelperResponseWriter) HTML(statusCode int, html string) error {
 	return err
 }
 
-// send xml
+// XML sends an XML response with the specified status code and data.
 func (rw *HelperResponseWriter) XML(statusCode int, data any, indent string) error {
 	rw.Header().Set(HeaderContentType, MIMEApplicationXMLCharsetUTF8)
 	rw.WriteHeader(statusCode)

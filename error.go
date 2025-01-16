@@ -11,11 +11,11 @@ import (
 	"net/http"
 )
 
-// centralized error handling function type.
+// ErrHandlerFunc defines the function signature for centralized error handling.
 type ErrHandlerFunc func(err error, w http.ResponseWriter)
 
-// default centrailzed error handling function.
-// only the *HTTPError will triger error response.
+// DefaultErrHandlerFunc is the default centralized error handling function.
+// It only triggers an error response for *HTTPError.
 func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 	if he, ok := err.(*HTTPError); ok {
 		rw := NewHelperRW(w)
@@ -25,31 +25,28 @@ func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
 	}
 }
 
-// The custom Error type is inspired by Echo.
+// HTTPError represents a custom error type inspired by Echo.
 type HTTPError struct {
-	StatusCode int
-	Msg        string
-	Internal   error
+	StatusCode int    // HTTP status code
+	Msg        string // Error message
+	Internal   error  // Internal error
 }
 
+// NewHTTPError creates a new HTTPError with the given status code and message.
 func NewHTTPError(statusCode int, msg string) *HTTPError {
-	he := &HTTPError{
+	return &HTTPError{
 		StatusCode: statusCode,
-		Msg:        http.StatusText(statusCode),
+		Msg:        msg,
 	}
-
-	if msg != "" {
-		he.Msg = msg
-	}
-
-	return he
 }
 
+// SetInternal sets the internal error for the HTTPError.
 func (e *HTTPError) SetInternal(err error) *HTTPError {
 	e.Internal = err
 	return e
 }
 
+// Error returns the error message for the HTTPError.
 func (e *HTTPError) Error() string {
 	if e.Internal == nil {
 		return fmt.Sprintf("code=%d, message=%v", e.StatusCode, e.Msg)
@@ -57,11 +54,17 @@ func (e *HTTPError) Error() string {
 	return fmt.Sprintf("code=%d, message=%v, internal=%v", e.StatusCode, e.Msg, e.Internal)
 }
 
+// Unwrap returns the internal error of the HTTPError.
+func (e *HTTPError) Unwrap() error {
+	return e.Internal
+}
+
+// helper returns the status code and its corresponding text.
 func helper(code int) (int, string) {
 	return code, http.StatusText(code)
 }
 
-// Errors
+// Predefined HTTP errors
 var (
 	ErrBadRequest                    = NewHTTPError(helper(http.StatusBadRequest))                    // HTTP 400 Bad Request
 	ErrUnauthorized                  = NewHTTPError(helper(http.StatusUnauthorized))                  // HTTP 401 Unauthorized
