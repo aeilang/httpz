@@ -2,19 +2,19 @@
 
 > httpz v1.0.0 版本已经发布，它的API已经稳定
 
-背景： net/http 1.22 虽然增强了路由功能，但使用体验不如 Echo 和 chi 等框架。
-
-httpz 是一个基于 net/http 1.22 版本构建的轻量级库，借鉴了 Echo 的集中式错误处理以及 chi 的小和轻量。
-
-httpz更像是 net/http 1.22 的一组helper函数，而非一个完整的 Web 框架。由于核心工作仍由 net/http 执行，httpz 的代码量非常少。
+httpz只是net/http的增强库，而不是新的框架。使用httpz，实际上就是使用net/http标准库进行开发。它要解决的问题是，
+net/http 1.22 虽然增强了路由功能，但使用不如 Echo 和 chi 等框架方便。
 
 它具有以下特性：
 
-- 集中式错误处理
+1. 以net/http 1.22+版本为基础
+2. 全局错误处理
+3. 便捷的分组
+4. 来自chi的中间件
+5. 来自Echo的数据绑定
+6. 快捷返回响应
 
-- 便捷的路由分组，可以为每个分组设置中间件，也可以为单个路由设置中间件。
-
-- 完全兼容标准库。
+httpz完全兼容net/http， 你可以选择使用httpz的增强功能，或者直接使用net/http。
 
 # 快速开始
 
@@ -66,100 +66,13 @@ func main() {
 
 完整的hello world例子在 [example](https://github.com/aeilang/httpz/blob/main//example/hello/main.go) 目录
 
-## 3.分组:
+# 基准测试
 
-```go
-// group return a new *ServeMux base on path "/api/"
-api := mux.Group("/api/")
+由 [Go web framework benchmark](https://github.com/smallnest/go-web-framework-benchmark)生成:
 
-// register GET /well route for api group.
-// GET /api/well
-api.Get("/well", func(w http.ResponseWriter, r *http.Request) error {	
-	rw := httpz.NewHelperRW(w)
-	return rw.JSON(http.StatusOK, httpz.Map{
-		"data": "well well httpz",
-	})
-})
-```
+![benchmark](./_img/benchmark.png)
 
-## 4.集中式错误处理
-
-```go
-// The parent mux of v2 is api,
-// allowing you to group routes infinitely.
-v2 := api.Group("/v2/")
-
-// GET /api/v2/hello
-v2.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
-	// centralized error handling in tests
-	return httpz.NewHTTPError(http.StatusBadRequest, "bad reqeust")
-})
-
-// testing path parameters and centrialzed error handling.
-// GET /api/v2/well/randomID
-v2.Get("/well/{id}", func(w http.ResponseWriter, r *http.Request) error {
-	id := r.PathValue("id")
-
-	return httpz.NewHTTPError(http.StatusBadRequest, id)
-})
-
-// Get /api/v2/httperr
-v2.Get("/httperr", func(w http.ResponseWriter, r *http.Request) error {
-
-	// only *HTTPError will trigger the global error handling.
-	// normal error just will just log the msg.
-	return errors.New("some error")
-})
-```
-
-
-自定义全局错误处理函数：
-
-```go
-// Create a new mux
-mux := httpz.NewServeMux()
-
-mux.ErrHandler = func(err error, w http.ResponseWriter) {
-  // for example:
-	http.Error(w, err.Error(), http.StatusInternalServerError)
-}
-```
-
-默认的全局错误处理函数如下：
-
-```go
-// default centrailzed error handling function.
-// only the *HTTPError will triger error response.
-func DefaultErrHandlerFunc(err error, w http.ResponseWriter) {
-	if he, ok := err.(*HTTPError); ok {
-		rw := NewHelperRW(w)
-		rw.JSON(he.StatusCode, Map{"msg": he.Msg})
-	} else {
-		slog.Error(err.Error())
-	}
-}
-```
-
-## 5.绑定参数
-
-你也可以像使用 Echo 一样绑定路径参数、查询参数、表单参数和 req.Body。
-
-```go
-	type User struct {
-		Name string `json:"name"`
-	}
-
-	// POST /api/v2/user
-	v2.Post("/user", func(w http.ResponseWriter, r *http.Request) error {
-		var u User
-		if err := httpz.Bind(r, &u); err != nil {
-			return err
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		return nil
-	})
-```
+详细的基准测试请查看[benchmark](https://httpz.vercel.app/cn/docs/benchmark)
 
 # 欢迎贡献你的代码
 
