@@ -119,3 +119,23 @@ func (rw *HelperResponseWriter) XML(statusCode int, data any, indent string) err
 
 	return enc.Encode(data)
 }
+
+func JSON(w http.ResponseWriter, statusCode int, data any) error {
+	hw := NewHelperRW(w)
+	return hw.JSON(statusCode, data)
+}
+
+func String(w http.ResponseWriter, statusCode int, s string) error {
+	hw := NewHelperRW(w)
+	return hw.String(statusCode, s)
+}
+
+func HTML(w http.ResponseWriter, statusCode int, html string) error {
+	hw := NewHelperRW(w)
+	return hw.HTML(statusCode, html)
+}
+
+func XML(w http.ResponseWriter, statusCode int, data any, indent string) error {
+	hw := NewHelperRW(w)
+	return hw.XML(statusCode, data, indent)
+}

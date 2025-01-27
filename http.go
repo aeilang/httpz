@@ -65,7 +65,7 @@ func (sm *ServeMux) Group(prefix string) *ServeMux {
 	}
 
 	if prefix[len(prefix)-1] != '/' {
-		panic("the last char ine prefix must b /")
+		panic("the last char in the prefix must be /")
 	}
 
 	mux := &ServeMux{
