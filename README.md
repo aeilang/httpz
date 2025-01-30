@@ -46,9 +46,12 @@ func main() {
 	// register a GET /hello route
 	// GET /hello
 	mux.Get("/hello", func(w http.ResponseWriter, r *http.Request) error {
-		// rw is a helper responsewriter to send response
-		rw := httpz.NewHelperRW(w)
-		return rw.String(http.StatusOK, "hello httpz")
+		return httpz.JSON(w, http.StatusOK, "hello httpz")
+
+		// or
+		// hw is a helper responsewriter to send response
+		// hw := httpz.NewHelperRW(w)
+		// return hw.String(http.StatusOK, "hello httpz")
 		
 		// or you can write it by yourself.
 		// hw.Header().Set("Content-Type", "text/plain; charset=UTF-8")

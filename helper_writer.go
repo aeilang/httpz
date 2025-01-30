@@ -120,21 +120,41 @@ func (rw *HelperResponseWriter) XML(statusCode int, data any, indent string) err
 	return enc.Encode(data)
 }
 
+// JSON is a convenience function for sending a JSON response.
+// the same as
+//
+//	hw := NewHelperRW(w)
+//	return hw.JSON(statusCode, data)
 func JSON(w http.ResponseWriter, statusCode int, data any) error {
 	hw := NewHelperRW(w)
 	return hw.JSON(statusCode, data)
 }
 
+// String is a convenience function for sending a plain text response.
+// the same as
+//
+//	hw := NewHelperRW(w)
+//	return hw.String(statusCode, s)
 func String(w http.ResponseWriter, statusCode int, s string) error {
 	hw := NewHelperRW(w)
 	return hw.String(statusCode, s)
 }
 
+// HTML is a convenience function for sending an HTML response.
+// the same as
+//
+//	hw := NewHelperRW(w)
+//	return hw.HTML(statusCode, html)
 func HTML(w http.ResponseWriter, statusCode int, html string) error {
 	hw := NewHelperRW(w)
 	return hw.HTML(statusCode, html)
 }
 
+// XML is a convenience function for sending an XML response.
+// the same as
+//
+//	hw := NewHelperRW(w)
+//	return hw.XML(statusCode, data, indent)
 func XML(w http.ResponseWriter, statusCode int, data any, indent string) error {
 	hw := NewHelperRW(w)
 	return hw.XML(statusCode, data, indent)
